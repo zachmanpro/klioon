@@ -9,14 +9,14 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 
 ### 1. User Registration and Profile Creation
 
-- [ ] 1.1 Write unit tests for user registration validation (email format, password strength, required fields)
-- [ ] 1.2 Set up AWS Amplify DataStore schema for User model with required fields (email, password, firstName, lastName, role)
-- [ ] 1.3 Create NextAuth.js configuration with credentials provider for local authentication
-- [ ] 1.4 Implement user registration API endpoint with input validation and password hashing
-- [ ] 1.5 Build registration form component with client-side validation and error handling
-- [ ] 1.6 Add profile creation flow with additional user information collection
-- [ ] 1.7 Implement email verification workflow using NextAuth.js email provider
-- [ ] 1.8 Verify all user registration tests pass and manual testing of complete registration flow
+- [x] 1.1 Write unit tests for user registration validation (email format, password strength, required fields)
+- [x] 1.2 Set up AWS Amplify DataStore schema for User model with required fields (email, password, firstName, lastName, role)
+- [x] 1.3 Create NextAuth.js configuration with credentials provider for local authentication
+- [x] 1.4 Implement user registration API endpoint with input validation and password hashing
+- [x] 1.5 Build registration form component with client-side validation and error handling
+- [x] 1.6 Add profile creation flow with additional user information collection
+- [x] 1.7 Implement email verification workflow using NextAuth.js email provider
+- [x] 1.8 Verify all user registration tests pass and manual testing of complete registration flow
 
 ### 2. Secure Login and Role-Based Access
 
