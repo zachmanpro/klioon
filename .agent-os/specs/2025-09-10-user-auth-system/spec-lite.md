@@ -1,0 +1,3 @@
+# Spec Summary (Lite)
+
+Implement a comprehensive email-based authentication system for the BIGZ collaborative storytelling platform with role-based access control (reader, writer, moderator) that integrates with AWS Amplify DataStore. The system enables secure user registration, login, and role management to support collaborative writing sessions across 12-hour cycles with sci-fi themed interface design.
