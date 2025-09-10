@@ -11,6 +11,7 @@ const schema = a.schema({
       email: a.string().required(),
       firstName: a.string().required(),
       lastName: a.string().required(),
+      passwordHash: a.string(), // Hashed password for authentication
       role: a.enum(['reader', 'writer', 'moderator']),
       emailVerified: a.boolean().default(false),
       profilePicture: a.string(),
