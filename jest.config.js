@@ -22,6 +22,7 @@ const customJestConfig = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
+  watchman: false, // Disable watchman to avoid permission issues
 };
 
 module.exports = createJestConfig(customJestConfig);

@@ -31,11 +31,11 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 
 ### 3. Role Management and User Administration
 
-- [ ] 3.1 Write unit tests for role assignment, permission checks, and admin user management functions
-- [ ] 3.2 Extend AWS Amplify DataStore schema to include Role model and user-role relationships
-- [ ] 3.3 Implement role-based permission system with granular access controls
-- [ ] 3.4 Create admin dashboard component for user management (view, edit, delete users)
-- [ ] 3.5 Build role assignment interface with permission matrix display
-- [ ] 3.6 Add user search and filtering functionality in admin interface
-- [ ] 3.7 Implement audit logging for user management actions and role changes
-- [ ] 3.8 Verify all role management tests pass and complete end-to-end testing of admin workflows
+- [x] 3.1 Write unit tests for role assignment, permission checks, and admin user management functions
+- [x] 3.2 Extend AWS Amplify DataStore schema to include Role model and user-role relationships
+- [x] 3.3 Implement role-based permission system with granular access controls
+- [x] 3.4 Create admin dashboard component for user management (view, edit, delete users)
+- [x] 3.5 Build role assignment interface with permission matrix display
+- [x] 3.6 Add user search and filtering functionality in admin interface
+- [x] 3.7 Implement audit logging for user management actions and role changes
+- [x] 3.8 Verify all role management tests pass and complete end-to-end testing of admin workflows
