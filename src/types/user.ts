@@ -21,6 +21,7 @@ export interface AuthUser {
   emailVerified: boolean;
   profilePicture?: string;
   isActive: boolean;
+  passwordHash?: string; // Optional for security (not always fetched)
   createdAt: string;
   updatedAt: string;
   lastLoginAt?: string;

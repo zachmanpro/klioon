@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signIn } from 'next-auth/react';
-import { Eye, EyeOff, Mail, Loader2, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Loader2, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { useAuth } from '@/lib/auth/AuthProvider';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,16 +13,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Login form validation schema
 const loginSchema = z.object({
   email: z
     .string()
     .min(1, 'Email is required')
-    .email('Please enter a valid email address'),
+    .email('Please enter a valid email address')
+    .transform((val) => val.toLowerCase().trim()),
   password: z
     .string()
-    .min(1, 'Password is required'),
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters'),
+  remember: z
+    .boolean()
+    .optional()
+    .default(false),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -34,10 +42,13 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, onError, className, callbackUrl = '/' }: LoginFormProps) {
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [rateLimitInfo, setRateLimitInfo] = useState<{ retryAfter?: number } | null>(null);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const {
     register,
@@ -50,12 +61,59 @@ export function LoginForm({ onSuccess, onError, className, callbackUrl = '/' }: 
 
   const watchedEmail = watch('email', '');
 
+  // Redirect if already authenticated
+  if (isAuthenticated && !authLoading) {
+    window.location.href = callbackUrl;
+    return (
+      <Card className={`w-full max-w-md mx-auto bg-slate-900 border-slate-700 ${className}`}>
+        <CardContent className="flex items-center justify-center p-8">
+          <div className="flex items-center space-x-2 text-green-400">
+            <CheckCircle className="h-5 w-5" />
+            <span>Already signed in. Redirecting...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Handle form submission
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setErrorMessage(null);
+    setRateLimitInfo(null);
 
     try {
+      // First, validate with our enhanced login API
+      const validateResponse = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          remember: data.remember,
+        }),
+      });
+
+      const validateResult = await validateResponse.json();
+
+      // Handle rate limiting
+      if (validateResponse.status === 429) {
+        setRateLimitInfo({ retryAfter: validateResult.retryAfter });
+        setErrorMessage(validateResult.error);
+        onError?.(validateResult.error);
+        return;
+      }
+
+      // Handle validation errors
+      if (!validateResponse.ok) {
+        setErrorMessage(validateResult.error);
+        onError?.(validateResult.error);
+        return;
+      }
+
+      // If validation passes, proceed with NextAuth sign in
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
@@ -64,16 +122,31 @@ export function LoginForm({ onSuccess, onError, className, callbackUrl = '/' }: 
       });
 
       if (result?.error) {
-        setErrorMessage(result.error);
-        onError?.(result.error);
+        // Handle NextAuth errors
+        const friendlyErrors: Record<string, string> = {
+          CredentialsSignin: 'Invalid email or password',
+          SessionRequired: 'Please sign in to continue',
+          CallbackError: 'Sign in failed. Please try again.',
+          Default: result.error,
+        };
+        
+        const errorMessage = friendlyErrors[result.error] || friendlyErrors.Default;
+        setErrorMessage(errorMessage);
+        onError?.(errorMessage);
       } else if (result?.ok) {
+        // Success
+        setLoginSuccess(true);
+        setErrorMessage(null);
         onSuccess?.();
-        // Redirect will be handled by NextAuth
-        window.location.href = callbackUrl;
+        
+        // Add a small delay to show success state before redirect
+        setTimeout(() => {
+          window.location.href = result.url || callbackUrl;
+        }, 500);
       }
     } catch (error) {
       console.error('Login error:', error);
-      const message = 'An unexpected error occurred. Please try again.';
+      const message = 'Network error. Please check your connection and try again.';
       setErrorMessage(message);
       onError?.(message);
     } finally {
@@ -128,11 +201,27 @@ export function LoginForm({ onSuccess, onError, className, callbackUrl = '/' }: 
       </CardHeader>
       
       <CardContent className="space-y-4">
+        {/* Success Alert */}
+        {loginSuccess && (
+          <Alert className="bg-green-900/20 border-green-800 text-green-400">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>Login successful! Redirecting...</AlertDescription>
+          </Alert>
+        )}
+
         {/* Error Alert */}
         {errorMessage && (
           <Alert className="bg-red-900/20 border-red-800 text-red-400">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{errorMessage}</AlertDescription>
+            <AlertDescription>
+              {errorMessage}
+              {rateLimitInfo?.retryAfter && (
+                <div className="mt-2 flex items-center text-sm">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Please wait {Math.ceil(rateLimitInfo.retryAfter / 60)} minutes before trying again
+                </div>
+              )}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -201,18 +290,38 @@ export function LoginForm({ onSuccess, onError, className, callbackUrl = '/' }: 
             )}
           </div>
 
+          {/* Remember Me Checkbox */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              {...register('remember')}
+              id="remember"
+              className="border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+            />
+            <Label 
+              htmlFor="remember" 
+              className="text-sm text-slate-300 cursor-pointer select-none"
+            >
+              Keep me signed in for 30 days
+            </Label>
+          </div>
+
           {/* Sign In Button */}
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || authLoading || rateLimitInfo !== null}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3
                        disabled:opacity-50 disabled:cursor-not-allowed
                        transition-all duration-200"
           >
-            {isLoading ? (
+            {isLoading || authLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Signing In...
+                {loginSuccess ? 'Success! Redirecting...' : 'Signing In...'}
+              </>
+            ) : rateLimitInfo ? (
+              <>
+                <Clock className="mr-2 h-4 w-4" />
+                Rate Limited
               </>
             ) : (
               'Sign In'

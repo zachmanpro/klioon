@@ -27,6 +27,8 @@
   - [x] Password reset and email verification
   - [x] Basic profile management
   - [x] Session management and security
+  - [x] Role-based access control and protected routes
+  - [x] Secure logout functionality
 
 - **Legacy Content Integration** (Effort: XL)
   - Import and structure existing BIGZ chapters
